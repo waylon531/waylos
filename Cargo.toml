@@ -1,0 +1,19 @@
+[package]
+name = "waylos"
+version = "0.0.1"
+authors = [ "waylon531@firechicken.net" ]
+
+[lib]
+name = "waylos"
+crate-type = [ "dynlib" ]
+path = "kernel.rs"
+
+[dependencies.core]
+path="lib/libcore"
+
+[dependencies.rlibc]
+path="lib/rlibc"
+
+#[dependencies.alloc]
+#path = "lib/liballoc"
+

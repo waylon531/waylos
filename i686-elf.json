@@ -1,0 +1,11 @@
+{
+    "data-layout": "e-p:32:32-f64:32:64-i64:32:64-f80:32:32-n8:16:32",
+    "llvm-target": "i686-elf",
+    "target-endian": "little",
+    "target-pointer-width": "32",
+    "arch": "x86",
+    "os": "waylos",
+    "morestack": false,
+    "no_compiler_rt": false,
+    "linker": "i686-elf-ld"
+}

@@ -1,0 +1,6 @@
+[submodule "Hydrogen"]
+	path = Hydrogen
+	url = https://github.com/zrho/Hydrogen.git
+[submodule "lib/rlibc"]
+	path = lib/rlibc
+	url = https://github.com/rust-lang-deprecated/rlibc.git

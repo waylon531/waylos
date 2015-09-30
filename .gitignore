@@ -1,0 +1,7 @@
+*.o
+*.d
+*.rlib
+build/
+waylos.bin
+waylos.iso
+map.txt
