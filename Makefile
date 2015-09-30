@@ -90,7 +90,7 @@ iso: $(TARGET)
 	#x86_64-elf-objcopy waylos.sys -F elf32-i386 isodir/boot/$(TARGET)
 	#mv waylos.sys isodir/boot/$(TARGET)
 	#grub-mkrescue -d /usr/lib/grub/i386-pc/ -o waylos.iso isodir
-	make -C Hydrogen image KERNEL=../waylos.bin
+	make -C Hydrogen image KERNEL=../../$(TARGET)
 	cp Hydrogen/build/boot.iso waylos.iso
 
 -include libcore.d kernel.d

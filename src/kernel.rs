@@ -28,9 +28,10 @@ use screen::Screen;
 pub extern fn kmain() {
     let mut screen = Screen::new();
     screen.clear();
-    unsafe {asm!("INT 8"::::"intel");}
     write!(screen,"Printing initialized\n");
     let info = unsafe{*(0x14C000 as *const hydrogen::hy_info)};
+    write!(screen,"Info table read\n");
+    //unsafe {asm!("INT 8"::::"intel");}
     write!(screen, "Magic: {}\n",info.magic);
     write!(screen,"Successful bootup");
 }
