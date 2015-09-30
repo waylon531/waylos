@@ -1,6 +1,7 @@
 *.o
 *.d
 *.rlib
+*.swp
 build/
 waylos.bin
 waylos.iso

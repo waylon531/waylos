@@ -1,12 +1,12 @@
 RUSTC = rustc
 RLIBFLAGS = --target=x86_64-elf.json --emit link,dep-info -C linker=x86_64-elf-ld -L . --crate-type lib -C opt-level=3
-RFLAGS = --target=x86_64-elf.json --emit obj,dep-info -C linker=x86_64-elf-ld -C no-redzone  -Z no-landing-pads -L . --crate-type lib --extern core=$(CORE) -C opt-level=3
+RFLAGS = --target=x86_64-elf.json --emit obj,dep-info -C linker=x86_64-elf-ld -C no-redzone  -Z no-landing-pads -L . --crate-type lib --extern core=$(CORE) -C opt-level=3 --extern liballoc=build/liballoc.rlib
 RFLAGS += -C code-model=kernel
 RFLAGS += -C soft-float
 #RFLAGS += --cfg disable_float
 NASM = nasm -felf64
 SOURCES = stub.asm dependencies.asm 
-RLIBS = kernel.o libcore.rlib liblib.rlib #liballoc.rlib liblibc.rlib
+RLIBS = kernel.o libcore.rlib liblib.rlib liballoc.rlib libcollections.rlib #liblibc.rlib
 TARGET = waylos.bin
 AR = x86_64-elf-ar
 LD = x86_64-elf-ld
@@ -57,14 +57,20 @@ build/%.o: src/%.S
 
 #libkernel.rlib:
 #	$(RUSTC) $(RLIBFLAGS) kernel.rs -o $@ --extern core=libcore.rlib
+build/librustc_unicode.rlib: $(CORE)
+	$(RUSTC) $(RLIBFLAGS) lib/librustc_unicode/lib.rs -o $@ --extern core=$(CORE)
+
 build/liblib.rlib: $(CORE)
 	$(RUSTC) $(RLIBFLAGS) lib/rlibc/src/lib.rs -o $@ --extern core=$(CORE)
 
 build/%.rlib: lib/%/lib.rs
 	$(RUSTC) $(RLIBFLAGS) lib/libcore/lib.rs -o $@
 	
-build/liballoc.rlib: $(CORE) build/liblibc.rlib
-	$(RUSTC) $(RLIBFLAGS) lib/liballoc/lib.rs -o $@ --extern core=$(CORE) -C target-feature='-test,-external_funcs,-external_crate' --extern libc=build/liblibc.rlib
+build/liballoc.rlib: $(CORE)
+	$(RUSTC) $(RLIBFLAGS) lib/liballoc/lib.rs -o $@ --extern core=$(CORE) --extern #libc=build/liblibc.rlib 
+
+build/libcollections.rlib: $(CORE) build/liballoc.rlib build/librustc_unicode.rlib
+	$(RUSTC) $(RLIBFLAGS) lib/libcollections/lib.rs -o $@ --extern core=$(CORE) --extern alloc=build/liballoc.rlib --extern rustc_unicode=build/librustc_unicode.rlib
 
 build/liblibc.rlib: $(CORE) lib/waylibc/lib.rs
 	$(RUSTC) $(RLIBFLAGS) lib/waylibc/lib.rs -o $@ --extern core=$(CORE)
