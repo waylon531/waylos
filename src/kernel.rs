@@ -14,6 +14,7 @@ mod screen;
 mod hydrogen;
 mod io;
 pub mod interrupts;
+pub mod thread;
 
 pub use core::intrinsics::*;
 pub use core::prelude::*;
