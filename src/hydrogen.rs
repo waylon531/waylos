@@ -1,4 +1,6 @@
-#[derive(Clone,Copy)]
+#[repr(C,packed)]
+#[allow(unused)]
+#[derive(Clone,Copy,Debug)]
 pub struct hy_info {
     pub magic: u32,
     flags: u32,
@@ -13,9 +15,12 @@ pub struct hy_info {
 
     free_paddr: u64,
 
-/*    irq_gsi: [u32; 16],
-    irq_flags: [u8; 16],
-
+    /*irq_gsi: [u32; 16], //Why doesn't this work?
+    irq_flags: [u8; 16],*/
+}
+#[repr(C,packed)]
+#[derive(Clone,Copy,Debug)]
+pub struct hy_info_second_half {
     cpu_offset: u16,
     ioapic_offset: u16,
     mmap_offset: u16,
@@ -26,12 +31,30 @@ pub struct hy_info {
     cpu_count: u16,
     ioapic_count: u16,
     mmap_count: u16,
-    module_count: u16, */
+    module_count: u16,
 }
-pub struct hy_cpu_info {
+#[derive(Clone,Copy)]
+pub struct cpu_info {
     apic_id: u32,
     acpi_id: u32,
     flags: u16,
     lapic_timer_freq: u32,
     domain: u32
+}
+#[derive(Clone,Copy,Debug)]
+#[repr(packed)]
+pub struct mmap_info {
+    pub address: u64,
+    pub length: u64,
+    pub available: u64,
+    pub padding: u64
+}
+impl mmap_info {
+    pub fn contains(&self, address: u64, length: u64) -> bool{ //This should probably return the next available address
+        return if address >= self.address && self.available == 1 && address + length <= self.address + self.length && self.available == 1{
+            true
+        } else {
+            false
+        }
+    }
 }

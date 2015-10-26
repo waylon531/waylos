@@ -19,16 +19,9 @@
 //}
 
 
-#[lang="panic_fmt"]
+//#[lang="panic_fmt"]
 #[no_mangle]
 pub extern fn rust_begin_unwind(args: ::core::fmt::Arguments, file: &str, line: usize) -> !
-{
-	loop {}
-}
-
-#[lang="stack_exhausted"]
-#[no_mangle]
-pub extern fn __morestack() -> !
 {
 	loop {}
 }
@@ -69,7 +62,6 @@ pub struct _Unwind_Exception
 	private: [u64; 2],
 }
 
-#[lang="eh_personality"]
 #[no_mangle]
 pub extern fn rust_eh_personality(
 	_version: isize, _actions: _Unwind_Action, _exception_class: u64,

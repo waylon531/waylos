@@ -1,11 +1,11 @@
 RUSTC = rustc
 RLIBFLAGS = --target=x86_64-elf.json --emit link,dep-info -C linker=x86_64-elf-ld -L . --crate-type lib -C opt-level=3
-RFLAGS = --target=x86_64-elf.json --emit obj,dep-info -C linker=x86_64-elf-ld -C no-redzone  -Z no-landing-pads -L . --crate-type lib --extern core=$(CORE) -C opt-level=3 --extern liballoc=build/liballoc.rlib
+RFLAGS = --target=x86_64-elf.json --emit obj,dep-info -C linker=x86_64-elf-ld -C no-redzone  -Z no-landing-pads -L . --crate-type lib --extern core=$(CORE) -C opt-level=3 --extern alloc=build/liballoc.rlib --extern collections=build/libcollections.rlib --extern rustc_unicode=build/librustc_unicode.rlib
 RFLAGS += -C code-model=kernel
 RFLAGS += -C soft-float
 #RFLAGS += --cfg disable_float
 NASM = nasm -felf64
-SOURCES = stub.asm dependencies.asm 
+SOURCES = stub.asm dependencies.asm thread.asm
 RLIBS = kernel.o libcore.rlib liblib.rlib liballoc.rlib libcollections.rlib #liblibc.rlib
 TARGET = waylos.bin
 AR = x86_64-elf-ar
@@ -45,6 +45,9 @@ libcompiler-rt:
 build/kernel.o: src/kernel.rs build/libcore.rlib src/*.rs
 	$(RUSTC) $(RFLAGS) $< -o $@ 
 
+test: src/kernel.rs build/libcore.rlib src/*.rs
+	$(RUSTC) --cfg feature=\"test\" $(RFLAGS) $< -o build/kernel.o
+
 build/%.o: src/%.asm
 	$(NASM) $< -o $@
 
@@ -67,7 +70,7 @@ build/%.rlib: lib/%/lib.rs
 	$(RUSTC) $(RLIBFLAGS) lib/libcore/lib.rs -o $@
 	
 build/liballoc.rlib: $(CORE)
-	$(RUSTC) $(RLIBFLAGS) lib/liballoc/lib.rs -o $@ --extern core=$(CORE) --extern #libc=build/liblibc.rlib 
+	$(RUSTC) $(RLIBFLAGS) lib/liballoc/lib.rs -o $@ --extern core=$(CORE) #--extern libc=build/liblibc.rlib 
 
 build/libcollections.rlib: $(CORE) build/liballoc.rlib build/librustc_unicode.rlib
 	$(RUSTC) $(RLIBFLAGS) lib/libcollections/lib.rs -o $@ --extern core=$(CORE) --extern alloc=build/liballoc.rlib --extern rustc_unicode=build/librustc_unicode.rlib
@@ -90,13 +93,10 @@ distclean:
 
 
 iso: $(TARGET)
-	#cp $(TARGET) isodir/boot/$(TARGET)
-	#cat pure64.sys waylos.bin > waylos.sys
-	#dd if=waylos.sys of=waylos.img bs=512 seek=16 conv=notrunc
-	#x86_64-elf-objcopy waylos.sys -F elf32-i386 isodir/boot/$(TARGET)
-	#mv waylos.sys isodir/boot/$(TARGET)
-	#grub-mkrescue -d /usr/lib/grub/i386-pc/ -o waylos.iso isodir
 	make -C Hydrogen image KERNEL=../../$(TARGET)
 	cp Hydrogen/build/boot.iso waylos.iso
+
+run: iso
+	qemu-system-x86_64 -cdrom waylos.iso -serial stdio
 
 -include libcore.d kernel.d

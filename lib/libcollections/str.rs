@@ -102,7 +102,7 @@ impl<S: Borrow<str>> SliceConcatExt<str> for [S] {
     }
 }
 
-/// External iterator for a string's UTF16 codeunits.
+/// External iterator for a string's UTF-16 code units.
 ///
 /// For use with the `std::iter` module.
 #[derive(Clone)]
@@ -867,6 +867,10 @@ impl str {
     /// ```rust,ignore
     /// assert_eq!(d, &["a", "b", "c"]);
     /// ```
+    ///
+    /// Use [`.split_whitespace()`][split_whitespace] for this behavior.
+    ///
+    /// [split_whitespace]: #method.split_whitespace
     #[stable(feature = "rust1", since = "1.0.0")]
     pub fn split<'a, P: Pattern<'a>>(&'a self, pat: P) -> Split<'a, P> {
         core_str::StrExt::split(self, pat)

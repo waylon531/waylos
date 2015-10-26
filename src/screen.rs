@@ -4,7 +4,7 @@ use core::result::Result;
 use core::result::Result::Ok;
 use core::str::StrExt;
 use core::convert::AsMut;
-use io;
+pub static mut SCREEN: Screen = Screen{p: Pos{x: 0, y: 0}};
 
 type VGA = [Char; 80*25];
 
@@ -34,7 +34,7 @@ impl Write for Screen {
         for c in s.chars() { 
             if c != '\n' { //make this check against a list of unprintable characters
                 unsafe {
-                    let mut screen = 0xb8000 as *mut VGA;
+                    let screen = 0xb8000 as *mut VGA;
                     (*screen).as_mut()[self.p.to_number() as usize] = self::Char{c: c as u8, color: Colour::Green};
                 }
             }

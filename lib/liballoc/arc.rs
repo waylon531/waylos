@@ -79,9 +79,8 @@ use core::cmp::Ordering;
 use core::mem::{align_of_val, size_of_val};
 use core::intrinsics::{drop_in_place, abort};
 use core::mem;
-use core::nonzero::NonZero;
 use core::ops::{Deref, CoerceUnsized};
-use core::ptr;
+use core::ptr::{self, Shared};
 use core::marker::Unsize;
 use core::hash::{Hash, Hasher};
 use core::{usize, isize};
@@ -93,7 +92,7 @@ const MAX_REFCOUNT: usize = (isize::MAX) as usize;
 ///
 /// # Examples
 ///
-/// In this example, a large vector of floats is shared between several threads.
+/// In this example, a large vector is shared between several threads.
 /// With simple pipes, without `Arc`, a copy would have to be made for each
 /// thread.
 ///
@@ -124,12 +123,13 @@ const MAX_REFCOUNT: usize = (isize::MAX) as usize;
 pub struct Arc<T: ?Sized> {
     // FIXME #12808: strange name to try to avoid interfering with
     // field accesses of the contained type via Deref
-    _ptr: NonZero<*mut ArcInner<T>>,
+    _ptr: Shared<ArcInner<T>>,
 }
 
 unsafe impl<T: ?Sized + Sync + Send> Send for Arc<T> { }
 unsafe impl<T: ?Sized + Sync + Send> Sync for Arc<T> { }
 
+#[cfg(not(stage0))] // remove cfg after new snapshot
 impl<T: ?Sized + Unsize<U>, U: ?Sized> CoerceUnsized<Arc<U>> for Arc<T> {}
 
 /// A weak pointer to an `Arc`.
@@ -141,12 +141,13 @@ impl<T: ?Sized + Unsize<U>, U: ?Sized> CoerceUnsized<Arc<U>> for Arc<T> {}
 pub struct Weak<T: ?Sized> {
     // FIXME #12808: strange name to try to avoid interfering with
     // field accesses of the contained type via Deref
-    _ptr: NonZero<*mut ArcInner<T>>,
+    _ptr: Shared<ArcInner<T>>,
 }
 
 unsafe impl<T: ?Sized + Sync + Send> Send for Weak<T> { }
 unsafe impl<T: ?Sized + Sync + Send> Sync for Weak<T> { }
 
+#[cfg(not(stage0))] // remove cfg after new snapshot
 impl<T: ?Sized + Unsize<U>, U: ?Sized> CoerceUnsized<Weak<U>> for Weak<T> {}
 
 #[stable(feature = "rust1", since = "1.0.0")]
@@ -190,7 +191,7 @@ impl<T> Arc<T> {
             weak: atomic::AtomicUsize::new(1),
             data: data,
         };
-        Arc { _ptr: unsafe { NonZero::new(Box::into_raw(x)) } }
+        Arc { _ptr: unsafe { Shared::new(Box::into_raw(x)) } }
     }
 
     /// Unwraps the contained value if the `Arc<T>` has only one strong reference.
@@ -307,9 +308,7 @@ impl<T: ?Sized> Arc<T> {
 
         if self.inner().weak.fetch_sub(1, Release) == 1 {
             atomic::fence(Acquire);
-            deallocate(ptr as *mut u8,
-                       size_of_val(&*ptr),
-                       align_of_val(&*ptr))
+            deallocate(ptr as *mut u8, size_of_val(&*ptr), align_of_val(&*ptr))
         }
     }
 }
@@ -550,6 +549,7 @@ impl<T: ?Sized> Drop for Arc<T> {
     ///
     /// } // implicit drop
     /// ```
+    #[unsafe_destructor_blind_to_params]
     #[inline]
     fn drop(&mut self) {
         // This structure has #[unsafe_no_drop_flag], so this drop glue may run
@@ -721,11 +721,7 @@ impl<T: ?Sized> Drop for Weak<T> {
         // ref, which can only happen after the lock is released.
         if self.inner().weak.fetch_sub(1, Release) == 1 {
             atomic::fence(Acquire);
-            unsafe {
-                deallocate(ptr as *mut u8,
-                           size_of_val(&*ptr),
-                           align_of_val(&*ptr))
-            }
+            unsafe { deallocate(ptr as *mut u8, size_of_val(&*ptr), align_of_val(&*ptr)) }
         }
     }
 }
@@ -1145,6 +1141,13 @@ mod tests {
 
 impl<T: ?Sized> borrow::Borrow<T> for Arc<T> {
     fn borrow(&self) -> &T {
+        &**self
+    }
+}
+
+#[stable(since = "1.5.0", feature = "smart_ptr_as_ref")]
+impl<T: ?Sized> AsRef<T> for Arc<T> {
+    fn as_ref(&self) -> &T {
         &**self
     }
 }

@@ -3,7 +3,7 @@
 ; just find the .so file for them and add it to the linker (and hope it
 ; doesn't pull any linux dependencies
 
-global _Unwind_Resume
+;global _Unwind_Resume
 global EXHAUSTED
 global __mulodi4
 global __divdi3
