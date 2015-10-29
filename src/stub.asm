@@ -6,8 +6,9 @@ extern save_registers
 extern restore_registers
 extern create_page
 extern serial_counter
-extern kernel_thread_create
+extern first_thread_create
 extern create_framebuffer_page
+global get_cr3
 
 HYDROGEN_HEADER_MAGIC equ  0x52445948
 section .hydrogen
@@ -46,8 +47,7 @@ start:
     extern kmain
     call kmain
     push serial_counter
-    call kernel_thread_create
-    jmp .hang
+    call first_thread_create
     int 32 ;start the first thread
 
 .hang:
@@ -86,11 +86,13 @@ double_fault:
 
 add_page:
     ;mov [0xFFFFFFFFFFFFFF00],rax ;This should not need a page to be allocated, putting stuff on the stack might cause a double fault
+    hlt
     call save_registers ;I have no idea what calling conventions rust uses
     mov rax, 0x10A000
     mov cr3, rax ;Enable identity paging
     mov [0xFFFFFFFFFFFFFF38],rsp
     mov rax, cr2
+    push 0x300000
     push rax
     call create_page
     mov rsp,[0xFFFFFFFFFFFFFF38]
@@ -105,7 +107,12 @@ interrupt_main:
     ;pushad
     ;cld
     ;call general_protection_rust
+    hlt
     ;popad
     iret
+
+get_cr3:
+    mov rax,cr3
+    ret
 
 ; vim: ft=nasm

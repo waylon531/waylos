@@ -97,6 +97,6 @@ iso: $(TARGET)
 	cp Hydrogen/build/boot.iso waylos.iso
 
 run: iso
-	qemu-system-x86_64 -cdrom waylos.iso -serial stdio
+	qemu-system-x86_64 -cdrom waylos.iso -serial stdio -m 512MB
 
 -include libcore.d kernel.d

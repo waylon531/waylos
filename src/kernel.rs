@@ -3,6 +3,9 @@
 extern crate alloc;
 extern crate rustc_unicode;
 extern crate collections;
+extern {
+    fn get_cr3() -> u64;
+}
 
 mod std {
     pub use core::{fmt,cmp,ops,iter,option,marker};
@@ -35,6 +38,7 @@ pub extern fn kmain() {
     unsafe {
     SCREEN.clear();
     write!(SCREEN,"Printing initialized\n");
+    write!(SCREEN,"CR3: {}\n",get_cr3());
     let info = unsafe{*(0x14C000 as *const hydrogen::hy_info)};
     write!(SCREEN,"Info table read\n");
     //unsafe {asm!("INT 8"::::"intel");}
@@ -50,16 +54,28 @@ pub extern fn kmain() {
     write!(SCREEN,"Successful bootup\n");
     tests::test(&mut SCREEN);
     let PML4 = 0x10A000 as *const PageTable;
-    let PDP = ((*PML4)[511] & 0xFFFFFFFFFFFFF400) as *const PageTable;
+    /*let PDP = ((*PML4)[511] & 0xFFFFFFFFFFFFF000) as *const PageTable;
     for i in 0 .. 512 {
         if (*PML4)[i] != 0 {
             write!(SCREEN,"i {} addr PML4E {}\n",i,(*PML4)[i]);
         }
     }
     for i in 0 .. 512 {
-        if (*PDP)[i] != 0 {
-            write!(SCREEN,"i {} addr PDPE {}\n",i,(*PDP)[i]);
+        if (*((*PML4)[511] as *const PageTable))[i] != 0 {
+            write!(SCREEN,"i {} addr PDPE {}\n",i,(*((*PML4)[511] as *const PageTable))[i]);
         }
+    }*/
+    *(0x100000 as *mut u64) = (*PML4).pages[511];
+    write!(SCREEN,"Kernel Page Addr {}\n",*(0x100000 as *mut u64));
+    for i in 0 .. 300 {
+        memory::palloc(); //For some reason a bunch of memory already has stuff in it
     }
+    let p = memory::palloc(); //Test writing to a random address
+    *(p as *mut u64) = 30;
+    write!(SCREEN,"30: {} @ {}\n",*(p as *mut u64),p);
+    memory::create_page(0xF00000000000,0x10A000);
+    *(0xFFFFF00000000000 as *mut u64) = 42;
+    write!(SCREEN,"42: {} @ {}\n",*(0xFFFFF00000000000 as *mut u64),0xFFFFF00000000000);
+    write!(SCREEN,"BLARG\n");
     }
 }
