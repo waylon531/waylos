@@ -73,9 +73,13 @@ pub extern fn kmain() {
     let p = memory::palloc(); //Test writing to a random address
     *(p as *mut u64) = 30;
     write!(SCREEN,"30: {} @ {}\n",*(p as *mut u64),p);
-    memory::create_page(0xF00000000000,0x10A000);
+    memory::create_page(0xFFFFF00000000000,0x10A000);
     *(0xFFFFF00000000000 as *mut u64) = 42;
     write!(SCREEN,"42: {} @ {}\n",*(0xFFFFF00000000000 as *mut u64),0xFFFFF00000000000);
+    *(0x300000 as *mut u64) = 0x10A000;
+    *(0xFFFFF10000000000 as *mut u64) = 0x42;
+    write!(SCREEN,"66: {} @ {}\n",*(0xFFFFF10000000000 as *mut u64),0xFFFFF10000000000);
     write!(SCREEN,"BLARG\n");
+    loop{}
     }
 }

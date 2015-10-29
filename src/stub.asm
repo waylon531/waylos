@@ -1,3 +1,4 @@
+extern clear_registers
 extern double_fault_rust
 extern general_protection_rust
 extern kb_handle
@@ -9,6 +10,7 @@ extern serial_counter
 extern first_thread_create
 extern create_framebuffer_page
 global get_cr3
+extern missing_page
 
 HYDROGEN_HEADER_MAGIC equ  0x52445948
 section .hydrogen
@@ -85,29 +87,26 @@ double_fault:
     iret
 
 add_page:
-    ;mov [0xFFFFFFFFFFFFFF00],rax ;This should not need a page to be allocated, putting stuff on the stack might cause a double fault
-    hlt
-    call save_registers ;I have no idea what calling conventions rust uses
+    call save_registers ;This might not be needed
+    call clear_registers
     mov rax, 0x10A000
     mov cr3, rax ;Enable identity paging
-    mov [0xFFFFFFFFFFFFFF38],rsp
-    mov rax, cr2
-    push 0x300000
-    push rax
-    call create_page
-    mov rsp,[0xFFFFFFFFFFFFFF38]
+    mov rsp,0xFFFFF00000000D00 ;This page is gauranteed to be allocated
+    call missing_page
+    ;mov rsp,[0xFFFFFFFFFFFFFF38]
 
-    mov rax, 0x300000 ; Reenable the current thread's page table
+    mov rax,[0x300000] ; Reenable the current thread's page table
     mov cr3, rax
     ;mov rax,[0xFFFFFFFFFFFFFF00]
     call restore_registers
-    iret
+    add rsp,8 ;Throw away the error code
+    iretq
 
 interrupt_main:
     ;pushad
     ;cld
-    ;call general_protection_rust
-    hlt
+    call general_protection_rust
+    ;hlt
     ;popad
     iret
 
