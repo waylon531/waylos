@@ -1,3 +1,19 @@
+/*  Waylos, a kernel built in rust
+    Copyright (C) 2015 Waylon Cude
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 extern {
     fn get_cr2() -> u64;
 }
@@ -68,9 +84,9 @@ impl PageTable {
     pub fn set_entry(&mut self,entry: usize,data: u64) {
         self.pages[entry] = data;
     }
-    pub fn clear(&self, entry: usize){ //Broken
-        unsafe{
-            *((self.pages[entry] & 0xFFFFFFFFF000) as *mut PageTable) = PageTable {pages: [0;512]};
+    pub fn clear(&mut self){ //Broken
+        for i in 0 .. 512 {
+            self.pages[i] = 0;
         }
     }
 }
@@ -83,13 +99,14 @@ pub extern fn create_page(u64_addr: u64,page_addr: u64) { //This function both f
     let PDO = (addr >> 21) & 0x1FF;
     let PTO = (addr >> 12) & 0x1FF;
     let page_table = page_addr as *mut PageTable;
-    unsafe{write!(SCREEN,"u64: {} page: {} {} {} {} {}\n",u64_addr,page_addr,PML4O,PDPO,PDO,PTO);}
+    //unsafe{write!(SCREEN,"u64: {} page: {} {} {} {} {}\n",u64_addr,page_addr,PML4O,PDPO,PDO,PTO);}
     unsafe {
         //I probably should check the page size, 
         //Hydrogen uses 2MB? pages
         if (*page_table).is_null(PML4O) {
             //For some reason data is already here
             (*page_table).set_entry(PML4O,palloc());
+            //(*(*page_table).next_level(PML4O)).clear();
         }
         //write!(SCREEN,"{} {}\n",(*page_table).get_entry(PML4O),*(palloc() as *mut u64));
         if (*(*page_table).next_level(PML4O)).is_null(PDPO) {

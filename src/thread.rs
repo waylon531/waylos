@@ -1,4 +1,21 @@
+/*  Waylos, a kernel built in rust
+    Copyright (C) 2015 Waylon Cude
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 use memory;
+use io;
 use screen::SCREEN;
 use core::fmt::Write;
 const THREAD_TABLE_ADDR: u64 = 0x300000;
@@ -11,10 +28,6 @@ extern {
     fn reset_cr3();
     fn set_cr3();
     fn setup_stack_register();
-}
-#[no_mangle]
-pub extern fn thread_switch() {
-
 }
 #[derive(Clone,Copy)]
 #[repr(packed)]
@@ -35,6 +48,8 @@ pub extern fn create_thread_memory_area(paddr: u64) -> u64{
     let page_addr = paddr & 0xFFFFFFFFF000;
     (*(page_addr as *mut memory::PageTable)).set_entry(511,*(0x100000 as *const u64));
     memory::create_page(0xFFFFF00000000000,page_addr);
+    memory::create_page(0xFFFFF00000003000,page_addr);
+    memory::create_page(0xFFFFF00000002000,page_addr);
     let index = (*(0x300000 as *const Thread_Table)).greatest_process_id;
     (*(0x300000 as *mut Thread_Table)).threads[index] = Thread {enabled: 1, page_addr: page_addr};
     (*(0x300000 as *mut Thread_Table)).greatest_process_id +=1;
@@ -86,6 +101,8 @@ pub extern fn thread_table_switch() {
                 (*(THREAD_TABLE_ADDR as *mut Thread_Table)).current_process_id += 1;
             }
         }
+        //write!(SCREEN,"PID {}\n",(*(THREAD_TABLE_ADDR as *mut Thread_Table)).current_process_id);
         (*(THREAD_TABLE_ADDR as *mut Thread_Table)).current_page_table = (*(THREAD_TABLE_ADDR as *const Thread_Table)).threads[(*(THREAD_TABLE_ADDR as *const Thread_Table)).current_process_id].page_addr;
+        //io::outb(0x3F8,(48+(*(THREAD_TABLE_ADDR as *mut Thread_Table)).current_process_id) as u8);
     }
 }

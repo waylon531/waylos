@@ -1,3 +1,19 @@
+/*  Waylos, a kernel built in rust
+    Copyright (C) 2015 Waylon Cude
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #![feature(no_std,lang_items,core,core_str_ext,asm,core_panic,core_intrinsics,custom_derive,alloc,unicode,collections)]
 #![no_std]
 extern crate alloc;
@@ -51,7 +67,6 @@ pub extern fn kmain() {
     unsafe {mmap_entries = core::slice::from_raw_parts((0x14D000 as *mut hydrogen::mmap_info),(*(0x14C09A as *const u16)) as usize);}
     PageStack::init(mmap_entries);
     write!(SCREEN,"Page Stack created\n");
-    write!(SCREEN,"Successful bootup\n");
     tests::test(&mut SCREEN);
     let PML4 = 0x10A000 as *const PageTable;
     /*let PDP = ((*PML4)[511] & 0xFFFFFFFFFFFFF000) as *const PageTable;
@@ -73,12 +88,16 @@ pub extern fn kmain() {
     let p = memory::palloc(); //Test writing to a random address
     *(p as *mut u64) = 30;
     write!(SCREEN,"30: {} @ {}\n",*(p as *mut u64),p);
+    *(0x300000 as *mut u64) = 0x10A000;
     memory::create_page(0xFFFFF00000000000,0x10A000);
     *(0xFFFFF00000000000 as *mut u64) = 42;
     write!(SCREEN,"42: {} @ {}\n",*(0xFFFFF00000000000 as *mut u64),0xFFFFF00000000000);
-    *(0x300000 as *mut u64) = 0x10A000;
-  //  *(0xFFFFF10000000000 as *mut u64) = 0x42;
-  //  write!(SCREEN,"66: {} @ {}\n",*(0xFFFFF10000000000 as *mut u64),0xFFFFF10000000000);
-    write!(SCREEN,"BLARG\n");
+    *(0xFFFFF10000000000 as *mut u64) = 0x42;
+    write!(SCREEN,"66: {} @ {}\n",*(0xFFFFF10000000000 as *mut u64),0xFFFFF10000000000);
+    write!(SCREEN,"Successful bootup\n");
     }
+}
+#[no_mangle]
+pub extern fn out(argh: u8) {
+    unsafe{io::outb(0x3F8,argh);}
 }

@@ -5,7 +5,7 @@ RFLAGS += -C code-model=kernel
 RFLAGS += -C soft-float
 #RFLAGS += --cfg disable_float
 NASM = nasm -felf64
-SOURCES = stub.asm dependencies.asm thread.asm
+SOURCES = stub.asm thread.asm dependencies.asm
 RLIBS = kernel.o libcore.rlib liblib.rlib liballoc.rlib libcollections.rlib #liblibc.rlib
 TARGET = waylos.bin
 AR = x86_64-elf-ar
@@ -42,7 +42,7 @@ libcompiler-rt:
 	cp compiler-rt/multi_arch/m32/libcompiler_rt.a ./
 	ln -s libcompiler_rt.a libcompiler-rt.a
 
-build/kernel.o: src/kernel.rs build/libcore.rlib src/*.rs
+build/kernel.o: src/kernel.rs build/libcore.rlib src/*.rs build/liballoc.rlib
 	$(RUSTC) $(RFLAGS) $< -o $@ 
 
 test: src/kernel.rs build/libcore.rlib src/*.rs
@@ -69,7 +69,7 @@ build/liblib.rlib: $(CORE)
 build/%.rlib: lib/%/lib.rs
 	$(RUSTC) $(RLIBFLAGS) lib/libcore/lib.rs -o $@
 	
-build/liballoc.rlib: $(CORE)
+build/liballoc.rlib: $(CORE) build/librustc_unicode.rlib build/libcollections.rlib
 	$(RUSTC) $(RLIBFLAGS) lib/liballoc/lib.rs -o $@ --extern core=$(CORE) #--extern libc=build/liblibc.rlib 
 
 build/libcollections.rlib: $(CORE) build/liballoc.rlib build/librustc_unicode.rlib

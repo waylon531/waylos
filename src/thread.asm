@@ -1,3 +1,20 @@
+;    Waylos, a kernel built in rust
+;    Copyright (C) 2015 Waylon Cude
+;
+;    This program is free software: you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation, either version 3 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License
+;    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+extern print_1
 global first_thread_create
 global clear_registers
 global setup_stack_kernel
@@ -26,13 +43,17 @@ reset_cr3:
     pop rax
     ret
 setup_stack_register:
-    pop rax ;Save the return address
-    and rdi,0x000FFFFFFFFFF000 ;Clear reserved bits
-    mov cr3,rdi
-    mov rsp,0xFFFFF00000000D00
+    pop rcx ;Save the return address
+    mov rax,rdi
+    and rax,qword 0x000FFFFFFFFFF000 ;Clear reserved bits
+    mov cr3,rax
+    mov rax,qword 0xFFFFF00000000D00
+    mov rsp,rax
+    mov rax,0xFFFFF00000000E80
+    mov [rax],rdx
     xor rdi,rdi
-    push rax
-    xor rax,rax
+    push rcx
+    xor rcx,rcx
     ret
 
 clear_registers:
@@ -64,18 +85,27 @@ setup_stack_user: ;rip is already on the stack
     push 0x18
     ret
 
-setup_stack_kernel: ;rip is already on the stack
-    pop rax ;return address
+setup_stack_kernel: ;this appears to not work correctly
+    pop rcx ;return address
+    push 0 ;For alignment
     push 0x10
-    push 0xFFFFF00000000100 ;This will get changed anyways
+    mov rax,qword 0xFFFFF00000000D00 
+    push qword rax;This will get changed anyways
     push 0
     push 0x08
     push rdx
-    push rax
-    xor rax,rax
+    push 0 ;Remove once interrupts work
+    push rcx
     ret
     
 save_registers:
+    push rbx
+    push rax
+    mov rax,0xFFFFF00000000E00
+    mov rbx,rax
+    pop rax
+    mov [rbx],rax ;Save rax first
+    pop rbx
     mov rax,0xFFFFF00000000E08
     mov [rax],rbx ;WHY CAN'T I USE 64-BIT IMMEDIATES
     pop rbx ;Remove the return address from the old stack
@@ -107,7 +137,6 @@ save_registers:
     mov [rax],r14
     mov rax,0xFFFFF00000000E78
     mov [rax],r15
-    mov [qword 0xFFFFF00000000E00],rax
     push rbx
     ret
 
@@ -144,7 +173,8 @@ restore_registers:
     mov r14,[rax]
     mov rax,0xFFFFF00000000E78
     mov r15,[rax]
-    mov rax,[qword 0xFFFFF00000000E00] 
+    mov rax,[abs qword 0xFFFFF00000000E00]
+    ;mov rax,[rax] ;Restore rax last
     ret
 
 get_stack_entry: ;I need to figure out a better way to do this
@@ -167,6 +197,9 @@ first_thread_create:
     mov rsp,rbp ;rust might have messed with rbp
     pop rdx ;save RIP
     call setup_stack_register
+    ;mov r8,75
+    ;mov rax,0xFFFFF00000000EA0
+    ;mov [rax],r8
     push rbx ;save return address
     push rdx ;save rip onto the stack
     call setup_registers
@@ -174,11 +207,17 @@ first_thread_create:
     pop rdx
     pop rbx
     call setup_stack_kernel
+    xor rcx,rcx
     mov rax,0xFFFFF00000000E38
     mov [rax],rsp
+    ;mov rdi,rsp
+    ;mov rax,0x10A000
+    ;mov cr3,rax
+    ;call print_1
+    ;hlt
     push rbx 
     ;xor rdx,rdx
     ret
 
 
-; vim: ft=nasm
+; vim: ft=nasm 

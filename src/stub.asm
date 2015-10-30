@@ -1,4 +1,23 @@
+;    Waylos, a kernel built in rust
+;    Copyright (C) 2015 Waylon Cude
+;
+;    This program is free software: you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation, either version 3 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License
+;    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 extern clear_registers
+extern out
+global thread_switch
 extern double_fault_rust
 extern general_protection_rust
 extern kb_handle
@@ -12,6 +31,8 @@ extern create_framebuffer_page
 global get_cr3
 global argh
 extern missing_page
+extern print_6
+extern print_1
 
 HYDROGEN_HEADER_MAGIC equ  0x52445948
 section .hydrogen
@@ -21,7 +42,8 @@ hydrogen_header:
         dd HYDROGEN_HEADER_MAGIC
         dd 0 ;Flags
 
-        dq 0,0,0,0
+        dq 0xFFFFF00000003000 ;Virtual stack address
+        dq 0,0,0
         dq 0,0
         dq isr_table;ISR entry table
         ;Each 2 bytes after this corrsepond to an irq entry
@@ -53,23 +75,82 @@ start:
     call first_thread_create
     mov rax,0x10A000
     mov cr3,rax
-    int 32
+    mov rdi,serial_counter
+    call first_thread_create
+    mov rax,0x10A000
+    mov cr3,rax
+    call thread_table_switch ;set PID 1 as active and set 0x300000
+    mov rax, [0x300000]
+    mov cr3,rax
+    call restore_registers
+    jmp serial_counter
 
 .hang:
     hlt
     jmp .hang
+
+argh:
+    jmp argh
+
+panic:
+    int 8
+    jmp panic
+
 keyboard_input: ;Send a message to the keyboard driver
     ;call kb_handle ;I need to implement message passing first
     iret
 thread_switch:
+    pop rdx ;rdx is caller saved
+    mov rax,0xFFFFF00000000E80 ;Save the return address
+    mov [rax],rdx
+    pushfq
+    ;pop rdi
+    ;pop rsi
+    ;pop rdx
+    ;pop rcx
+    ;pop r8
     call save_registers
     mov rax, 0x10A000 ;Enable identity paging
     mov cr3, rax
     call thread_table_switch
     mov rax, [0x300000] ;Load the correct page table
     mov cr3, rax
+    ;mov rdi,'a'
+    call out
     call restore_registers
-    iret
+    ;mov rdi,'b'
+    call out
+    ;mov rax,0xFFFFF00000000EA0
+    ;mov rdi,[rax]
+    ;cmp rdi,75
+    ;jne panic ;Something is wrong with memory
+    ;pop rdi
+    ;pop rsi
+    ;pop rdx
+    ;pop rcx
+    ;pop r8
+    ;pop r9
+    ;mov rax, 0x10A000
+    ;mov cr3,rax
+    ;call print_6
+    ;hlt
+    ;pop rdi
+    ;mov rax, 0x10A000 ;Enable identity paging
+    ;mov cr3, rax
+    ;call print_1
+    ;mov rdi,serial_counter
+    ;call print_1
+    ;hlt
+    ;mov rax, [0x300000] ;Enable identity paging
+    ;mov cr3, rax
+    ;push rdi
+    popfq
+    ;mov rdi,'$'
+    call out
+    mov rax,0xFFFFF00000000E80
+    mov rdx,[rax]
+    push rdx
+    ret
 
 framebuffer_page:
     push rax
@@ -82,11 +163,17 @@ framebuffer_page:
     iret
 
 double_fault:
-    ;pushad
-    ;cld
-    call double_fault_rust
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop r8
+    pop r9
+    mov rax, 0x10A000
+    mov cr3,rax
+   
+    call print_6
     hlt
-    ;popad
     iret
 
 add_page:
@@ -108,7 +195,16 @@ add_page:
 interrupt_main:
     ;pushad
     ;cld
-    call general_protection_rust
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop r8
+    pop r9
+    mov rax, 0x10A000
+    mov cr3,rax
+   
+    call print_6
     hlt
     ;popad
     iret
