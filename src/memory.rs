@@ -104,8 +104,8 @@ pub extern fn create_page(u64_addr: u64,page_addr: u64) { //This function both f
         
     }
 }
-
-pub fn palloc() -> u64 {
+#[no_mangle]
+pub extern fn palloc() -> u64 {
     unsafe {((*(0x500000 as *mut PageStack)).pop() & 0x7FFFFFFFFFFFF000)| 0b111} //Set the last 3 bits and clear the NX bit, also clear bits 8-11
 }
 #[no_mangle]

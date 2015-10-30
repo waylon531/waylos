@@ -77,9 +77,8 @@ pub extern fn kmain() {
     *(0xFFFFF00000000000 as *mut u64) = 42;
     write!(SCREEN,"42: {} @ {}\n",*(0xFFFFF00000000000 as *mut u64),0xFFFFF00000000000);
     *(0x300000 as *mut u64) = 0x10A000;
-    *(0xFFFFF10000000000 as *mut u64) = 0x42;
-    write!(SCREEN,"66: {} @ {}\n",*(0xFFFFF10000000000 as *mut u64),0xFFFFF10000000000);
+  //  *(0xFFFFF10000000000 as *mut u64) = 0x42;
+  //  write!(SCREEN,"66: {} @ {}\n",*(0xFFFFF10000000000 as *mut u64),0xFFFFF10000000000);
     write!(SCREEN,"BLARG\n");
-    loop{}
     }
 }

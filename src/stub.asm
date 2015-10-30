@@ -10,6 +10,7 @@ extern serial_counter
 extern first_thread_create
 extern create_framebuffer_page
 global get_cr3
+global argh
 extern missing_page
 
 HYDROGEN_HEADER_MAGIC equ  0x52445948
@@ -48,9 +49,11 @@ start:
     call thread_table_create ;Setup thread table
     extern kmain
     call kmain
-    push serial_counter
+    mov rdi,serial_counter
     call first_thread_create
-    int 32 ;start the first thread
+    mov rax,0x10A000
+    mov cr3,rax
+    int 32
 
 .hang:
     hlt
@@ -60,10 +63,10 @@ keyboard_input: ;Send a message to the keyboard driver
     iret
 thread_switch:
     call save_registers
-    call thread_table_switch
     mov rax, 0x10A000 ;Enable identity paging
     mov cr3, rax
-    mov rax, 0x300000 ;Load the correct page table
+    call thread_table_switch
+    mov rax, [0x300000] ;Load the correct page table
     mov cr3, rax
     call restore_registers
     iret
@@ -106,7 +109,7 @@ interrupt_main:
     ;pushad
     ;cld
     call general_protection_rust
-    ;hlt
+    hlt
     ;popad
     iret
 
