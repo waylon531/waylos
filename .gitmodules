@@ -4,3 +4,6 @@
 [submodule "lib/rlibc"]
 	path = lib/rlibc
 	url = https://github.com/rust-lang-deprecated/rlibc.git
+[submodule "lib/rust"]
+	path = lib/rust
+	url = https://github.com/rust-lang/rust.git

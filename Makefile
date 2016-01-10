@@ -10,6 +10,7 @@ RLIBS = kernel.o libcore.rlib liblib.rlib liballoc.rlib libcollections.rlib #lib
 TARGET = waylos.bin
 AR = x86_64-elf-ar
 LD = x86_64-elf-ld
+RUSTC_JOBS = -j4
 LINKSCRIPT := linker.ld
 LINKFLAGS := -T $(LINKSCRIPT)
 #LINKFLAGS += --gc-sections
@@ -42,7 +43,7 @@ libcompiler-rt:
 	cp compiler-rt/multi_arch/m32/libcompiler_rt.a ./
 	ln -s libcompiler_rt.a libcompiler-rt.a
 
-build/kernel.o: src/kernel.rs build/libcore.rlib src/*.rs build/liballoc.rlib
+build/kernel.o: src/kernel.rs build/libcore.rlib src/*.rs build/liballoc.rlib build/libcollections.rlib
 	$(RUSTC) $(RFLAGS) $< -o $@ 
 
 test: src/kernel.rs build/libcore.rlib src/*.rs
@@ -54,25 +55,28 @@ build/%.o: src/%.asm
 build/%.o: src/%.S
 	x86_64-elf-as $< -o $@
 
+lib/%:
+	cp -r lib/rust/src/$(notdir $@) $@
+
 #%.rlib: %.rs
 #	$(RUSTC) $(RLIBFLAGS) $@
 #
 
 #libkernel.rlib:
 #	$(RUSTC) $(RLIBFLAGS) kernel.rs -o $@ --extern core=libcore.rlib
-build/librustc_unicode.rlib: $(CORE)
+build/librustc_unicode.rlib: $(CORE) lib/librustc_unicode
 	$(RUSTC) $(RLIBFLAGS) lib/librustc_unicode/lib.rs -o $@ --extern core=$(CORE)
 
-build/liblib.rlib: $(CORE)
+build/liblib.rlib: $(CORE) 
 	$(RUSTC) $(RLIBFLAGS) lib/rlibc/src/lib.rs -o $@ --extern core=$(CORE)
 
-build/%.rlib: lib/%/lib.rs
+build/libcore.rlib: lib/libcore
 	$(RUSTC) $(RLIBFLAGS) lib/libcore/lib.rs -o $@
 	
-build/liballoc.rlib: $(CORE) build/librustc_unicode.rlib build/libcollections.rlib
+build/liballoc.rlib: $(CORE) build/librustc_unicode.rlib lib/liballoc
 	$(RUSTC) $(RLIBFLAGS) lib/liballoc/lib.rs -o $@ --extern core=$(CORE) #--extern libc=build/liblibc.rlib 
 
-build/libcollections.rlib: $(CORE) build/liballoc.rlib build/librustc_unicode.rlib
+build/libcollections.rlib: $(CORE) build/liballoc.rlib build/librustc_unicode.rlib lib/libcollections
 	$(RUSTC) $(RLIBFLAGS) lib/libcollections/lib.rs -o $@ --extern core=$(CORE) --extern alloc=build/liballoc.rlib --extern rustc_unicode=build/librustc_unicode.rlib
 
 build/liblibc.rlib: $(CORE) lib/waylibc/lib.rs
@@ -90,6 +94,7 @@ clean:
 distclean:
 	rm -r build
 	rm *.bin
+	rm -r lib/liballoc lib/libcollections lib/libcore lib/liblibc lib/librustc_unicode
 
 
 iso: $(TARGET)

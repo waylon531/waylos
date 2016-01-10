@@ -6,3 +6,6 @@ build/
 waylos.bin
 waylos.iso
 map.txt
+lib/*/
+!lib/rust
+!lib/rlibc
