@@ -7,3 +7,9 @@
 [submodule "lib/rust"]
 	path = lib/rust
 	url = https://github.com/rust-lang/rust.git
+[submodule "lib/rust-x86"]
+	path = lib/rust-x86
+	url = https://github.com/gz/rust-x86.git
+[submodule "lib/rust-cpuid"]
+	path = lib/rust-cpuid
+	url = https://github.com/gz/rust-cpuid.git

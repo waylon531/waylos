@@ -1,12 +1,12 @@
 RUSTC = rustc
 RLIBFLAGS = --target=x86_64-elf.json --emit link,dep-info -C linker=x86_64-elf-ld -L . --crate-type lib -C opt-level=3
-RFLAGS = --target=x86_64-elf.json --emit obj,dep-info -C linker=x86_64-elf-ld -C no-redzone  -Z no-landing-pads -L . --crate-type lib --extern core=$(CORE) -C opt-level=3 --extern alloc=build/liballoc.rlib --extern collections=build/libcollections.rlib --extern rustc_unicode=build/librustc_unicode.rlib
+RFLAGS = --target=x86_64-elf.json --emit obj,dep-info -C linker=x86_64-elf-ld -C no-redzone  -Z no-landing-pads -L . --crate-type lib --extern core=$(CORE) -C opt-level=3 --extern alloc=build/liballoc.rlib --extern collections=build/libcollections.rlib --extern rustc_unicode=build/librustc_unicode.rlib --extern x86=build/libx86.rlib
 RFLAGS += -C code-model=kernel
 RFLAGS += -C soft-float
 #RFLAGS += --cfg disable_float
 NASM = nasm -felf64
 SOURCES = stub.asm thread.asm dependencies.asm
-RLIBS = kernel.o libcore.rlib liblib.rlib liballoc.rlib libcollections.rlib #liblibc.rlib
+RLIBS = kernel.o libcore.rlib liblib.rlib liballoc.rlib libcollections.rlib libx86.rlib #liblibc.rlib
 TARGET = waylos.bin
 AR = x86_64-elf-ar
 LD = x86_64-elf-ld
@@ -64,6 +64,13 @@ lib/%:
 
 #libkernel.rlib:
 #	$(RUSTC) $(RLIBFLAGS) kernel.rs -o $@ --extern core=libcore.rlib
+	
+build/libx86.rlib: $(CORE) build/libraw_cpuid.rlib
+	$(RUSTC) $(RLIBFLAGS) lib/rust-x86/src/lib.rs -o $@ --extern core=$(CORE) --extern raw_cpuid=build/libraw_cpuid.rlib
+
+build/libraw_cpuid.rlib: $(CORE)
+	$(RUSTC) $(RLIBFLAGS) lib/rust-cpuid/src/lib.rs -o $@ --extern core=$(CORE)
+
 build/librustc_unicode.rlib: $(CORE) lib/librustc_unicode
 	$(RUSTC) $(RLIBFLAGS) lib/librustc_unicode/lib.rs -o $@ --extern core=$(CORE)
 
