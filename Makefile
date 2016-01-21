@@ -99,9 +99,9 @@ clean:
 	rm build/*.o
 
 distclean:
-	rm -r build
-	rm *.bin
-	rm -r lib/liballoc lib/libcollections lib/libcore lib/liblibc lib/librustc_unicode
+	rm -rf build
+	rm -f *.bin
+	rm -rf lib/liballoc lib/libcollections lib/libcore lib/liblibc lib/librustc_unicode
 
 
 iso: $(TARGET)
