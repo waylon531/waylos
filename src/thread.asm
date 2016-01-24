@@ -13,7 +13,6 @@
 ;
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 extern print_1
 global first_thread_create
 global clear_registers
@@ -45,12 +44,13 @@ reset_cr3:
 setup_stack_register:
     pop rcx ;Save the return address
     mov rax,rdi
-    and rax,qword 0x000FFFFFFFFFF000 ;Clear reserved bits
+    mov r8, 0x000FFFFFFFFFF000
+    and rax,r8 ;Clear reserved bits
     mov cr3,rax
     mov rax,qword 0xFFFFF00000000D00
     mov rsp,rax
     mov rax,0xFFFFF00000000E80
-    mov [rax],rdx
+    mov [rax],rdx ;Crashes here ;Store RIP in memory
     xor rdi,rdi
     push rcx
     xor rcx,rcx
@@ -191,12 +191,15 @@ first_thread_create:
     extern palloc
     call palloc
     mov rdi,rax ;rax should have the memory address from palloc
+    ;call print_1
     extern create_thread_memory_area
     call create_thread_memory_area
+    hlt
     mov rdi,rax ;rax should have the fixed memory address
     mov rsp,rbp ;rust might have messed with rbp
     pop rdx ;save RIP
     call setup_stack_register
+    hlt
     ;mov r8,75
     ;mov rax,0xFFFFF00000000EA0
     ;mov [rax],r8

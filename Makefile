@@ -1,6 +1,6 @@
 RUSTC = rustc
 RLIBFLAGS = --target=x86_64-elf.json --emit link,dep-info -C linker=x86_64-elf-ld -L . --crate-type lib -C opt-level=3
-RFLAGS = --target=x86_64-elf.json --emit obj,dep-info -C linker=x86_64-elf-ld -C no-redzone  -Z no-landing-pads -L . --crate-type lib --extern core=$(CORE) -C opt-level=3 --extern alloc=build/liballoc.rlib --extern collections=build/libcollections.rlib --extern rustc_unicode=build/librustc_unicode.rlib --extern x86=build/libx86.rlib
+RFLAGS = --target=x86_64-elf.json --emit obj,dep-info -C linker=x86_64-elf-ld -C no-redzone  -Z no-landing-pads -L . --crate-type lib --extern core=$(CORE) -C opt-level=3 --extern alloc=build/liballoc.rlib --extern collections=build/libcollections.rlib --extern rustc_unicode=build/librustc_unicode.rlib --extern x86=build/libx86.rlib --extern raw_cpuid=build/libraw_cpuid.rlib
 RFLAGS += -C code-model=kernel
 RFLAGS += -C soft-float
 #RFLAGS += --cfg disable_float
@@ -43,7 +43,7 @@ libcompiler-rt:
 	cp compiler-rt/multi_arch/m32/libcompiler_rt.a ./
 	ln -s libcompiler_rt.a libcompiler-rt.a
 
-build/kernel.o: src/kernel.rs build/libcore.rlib src/*.rs build/liballoc.rlib build/libcollections.rlib
+build/kernel.o: src/kernel.rs build/libcore.rlib src/*.rs build/liballoc.rlib build/libcollections.rlib build/libx86.rlib
 	$(RUSTC) $(RFLAGS) $< -o $@ 
 
 test: src/kernel.rs build/libcore.rlib src/*.rs

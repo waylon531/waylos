@@ -48,6 +48,7 @@ pub extern fn create_thread_memory_area(paddr: u64) -> u64{
     let page_addr = paddr & 0xFFFFFFFFF000;
     (*(page_addr as *mut memory::PageTable)).set_entry(511,*(0x100000 as *const u64));
     memory::create_page(0xFFFFF00000000000,page_addr);
+    loop{}
     memory::create_page(0xFFFFF00000003000,page_addr);
     memory::create_page(0xFFFFF00000002000,page_addr);
     let index = (*(0x300000 as *const Thread_Table)).greatest_process_id;

@@ -85,9 +85,10 @@ impl PageTable {
         self.pages[entry] = data;
     }
     pub fn clear(&mut self){ //Broken
-        for i in 0 .. 512 {
-            self.pages[i] = 0;
-        }
+        //for i in 0 .. 512 {
+        //    self.pages[i] = 0;
+        //}
+        self.pages= [0;512];
     }
 }
 #[no_mangle]
@@ -104,11 +105,8 @@ pub extern fn create_page(u64_addr: u64,page_addr: u64) { //This function both f
         //I probably should check the page size, 
         //Hydrogen uses 2MB? pages
         if (*page_table).is_null(PML4O) {
-            //For some reason data is already here
             (*page_table).set_entry(PML4O,palloc());
-            //(*(*page_table).next_level(PML4O)).clear();
         }
-        //write!(SCREEN,"{} {}\n",(*page_table).get_entry(PML4O),*(palloc() as *mut u64));
         if (*(*page_table).next_level(PML4O)).is_null(PDPO) {
             (*(*page_table).next_level(PML4O)).set_entry(PDPO,palloc());
         }
@@ -118,12 +116,20 @@ pub extern fn create_page(u64_addr: u64,page_addr: u64) { //This function both f
         if (*(*(*(*page_table).next_level(PML4O)).next_level(PDPO)).next_level(PDO)).is_null(PTO) {
             (*(*(*(*page_table).next_level(PML4O)).next_level(PDPO)).next_level(PDO)).set_entry(PTO,palloc());
         }
+        //write!(SCREEN,"{} {}\n",(*page_table).get_entry(PML4O),*(palloc() as *mut u64));
         
     }
 }
 #[no_mangle]
 pub extern fn palloc() -> u64 {
-    unsafe {((*(0x500000 as *mut PageStack)).pop() & 0x7FFFFFFFFFFFF000)| 0b111} //Set the last 3 bits and clear the NX bit, also clear bits 8-11
+    let mut p = 0;
+    loop { unsafe {
+        p = (*(0x500000 as *mut PageStack)).pop();
+        //write!(SCREEN,"PALLOC: {}\n",p);
+        if p > 0x800000 {break;} //Don't overwrite kernel
+    } }
+    unsafe {*(p as *mut u64) = core::mem::zeroed();}
+    unsafe {(p & 0x7FFFFFFFFFFFF000)| 0b111} //Set the last 3 bits and clear the NX bit, also clear bits 8-11
 }
 #[no_mangle]
 pub extern fn create_framebuffer_page(u64_addr: u64,page_addr: u64) {

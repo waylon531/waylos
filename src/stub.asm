@@ -42,7 +42,7 @@ hydrogen_header:
         dd HYDROGEN_HEADER_MAGIC
         dd 0 ;Flags
 
-        dq 0xFFFFF00000003000 ;Virtual stack address
+        dq stack_begin;0xFFFFF00000003000;stack_begin ;Stack address
         dq 0,0,0
         dq 0,0
         dq isr_table;ISR entry table
@@ -71,19 +71,19 @@ start:
     call thread_table_create ;Setup thread table
     extern kmain
     call kmain
-    mov rdi,serial_counter
-    call first_thread_create
-    mov rax,0x10A000
-    mov cr3,rax
-    mov rdi,serial_counter
-    call first_thread_create
-    mov rax,0x10A000
-    mov cr3,rax
-    call thread_table_switch ;set PID 1 as active and set 0x300000
-    mov rax, [0x300000]
-    mov cr3,rax
-    call restore_registers
-    jmp serial_counter
+    ;mov rdi,serial_counter
+    ;call first_thread_create
+    ;mov rax,0x10A000
+    ;mov cr3,rax
+    ;mov rdi,serial_counter
+    ;call first_thread_create
+    ;mov rax,0x10A000
+    ;mov cr3,rax
+    ;call thread_table_switch ;set PID 1 as active and set 0x300000
+    ;mov rax, [0x300000]
+    ;mov cr3,rax
+    ;call restore_registers
+    ;jmp serial_counter
 
 .hang:
     hlt
@@ -181,7 +181,7 @@ add_page:
     call clear_registers
     mov rax, 0x10A000
     mov cr3, rax ;Enable identity paging
-    mov rsp,0xFFFFF00000000D00 ;This page is gauranteed to be allocated
+    mov rsp,stack_begin ;This page is gauranteed to be allocated
     call missing_page
     ;mov rsp,[0xFFFFFFFFFFFFFF38]
 
@@ -189,13 +189,14 @@ add_page:
     mov cr3, rax
     ;mov rax,[0xFFFFFFFFFFFFFF00]
     call restore_registers
-    add rsp,8 ;Throw away the error code
+    add rsp,0x8 ;Throw away the error code
+    ;jmp double_fault
     iretq
 
 interrupt_main:
     ;pushad
     ;cld
-    pop rdi
+    mov rdi,42
     pop rsi
     pop rdx
     pop rcx
@@ -212,5 +213,11 @@ interrupt_main:
 get_cr3:
     mov rax,cr3
     ret
+
+section .bss
+align 4096
+stack_begin:
+    RESB 4096  ; Reserve 4 KiB stack space
+stack_end:
 
 ; vim: ft=nasm

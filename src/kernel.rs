@@ -14,11 +14,13 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#![feature(no_std,lang_items,core,core_str_ext,asm,core_panic,core_intrinsics,custom_derive,alloc,unicode,collections)]
+#![feature(lang_items,core_str_ext,asm,core_panic,core_intrinsics,custom_derive,alloc,unicode,collections)]
 #![no_std]
 extern crate alloc;
 extern crate rustc_unicode;
 extern crate collections;
+extern crate raw_cpuid;
+extern crate x86;
 extern {
     fn get_cr3() -> u64;
 }
@@ -82,9 +84,9 @@ pub extern fn kmain() {
     }*/
     *(0x100000 as *mut u64) = (*PML4).pages[511];
     write!(SCREEN,"Kernel Page Addr {}\n",*(0x100000 as *mut u64));
-    for i in 0 .. 300 {
-        memory::palloc(); //For some reason a bunch of memory already has stuff in it
-    }
+    //for i in 0 .. 300 {
+    //    memory::palloc(); //For some reason a bunch of memory already has stuff in it
+    //}
     let p = memory::palloc(); //Test writing to a random address
     *(p as *mut u64) = 30;
     write!(SCREEN,"30: {} @ {}\n",*(p as *mut u64),p);
