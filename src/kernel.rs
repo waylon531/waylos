@@ -21,6 +21,8 @@ extern crate rustc_unicode;
 extern crate collections;
 extern crate raw_cpuid;
 extern crate x86;
+extern crate lib;
+extern crate walloc;
 extern {
     fn get_cr3() -> u64;
 }

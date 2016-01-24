@@ -1,6 +1,6 @@
 RUSTC = rustc
-RLIBFLAGS = --target=x86_64-elf.json --emit link,dep-info -C linker=x86_64-elf-ld -L . --crate-type lib -C opt-level=3
-RFLAGS = --target=x86_64-elf.json --emit obj,dep-info -C linker=x86_64-elf-ld -C no-redzone  -Z no-landing-pads -L . --crate-type lib --extern core=$(CORE) -C opt-level=3 --extern alloc=build/liballoc.rlib --extern collections=build/libcollections.rlib --extern rustc_unicode=build/librustc_unicode.rlib --extern x86=build/libx86.rlib --extern raw_cpuid=build/libraw_cpuid.rlib
+RLIBFLAGS = --target=x86_64-elf.json --emit link -C linker=x86_64-elf-ld -L . --crate-type lib -C opt-level=3
+RFLAGS = --target=x86_64-elf.json --emit obj -C linker=x86_64-elf-ld -C no-redzone  -Z no-landing-pads -L . --crate-type lib --extern core=$(CORE) -C opt-level=3 --extern alloc=build/liballoc.rlib --extern collections=build/libcollections.rlib --extern rustc_unicode=build/librustc_unicode.rlib --extern x86=build/libx86.rlib --extern raw_cpuid=build/libraw_cpuid.rlib --extern walloc=build/libwalloc.rlib --extern lib=build/liblib.rlib
 RFLAGS += -C code-model=kernel
 RFLAGS += -C soft-float
 #RFLAGS += --cfg disable_float
@@ -21,7 +21,7 @@ LINKFLAGS += -z max-page-size=0x1000
 CORE := build/libcore.rlib
 
 OBJECTS:=$(patsubst %,build/%.o,$(basename $(SOURCES)))
-SOURCES:=$(patsubst %,src/%,$(SOURCES))
+SOURCES:=$(patsubst %,src/arch/x86-64/%,$(SOURCES))
 RLIBS:=$(patsubst %,build/%,$(RLIBS))
 RLOC=target/x86_64-elf/debug
 
@@ -43,13 +43,16 @@ libcompiler-rt:
 	cp compiler-rt/multi_arch/m32/libcompiler_rt.a ./
 	ln -s libcompiler_rt.a libcompiler-rt.a
 
-build/kernel.o: src/kernel.rs build/libcore.rlib src/*.rs build/liballoc.rlib build/libcollections.rlib build/libx86.rlib
+build/kernel.o: src/kernel.rs build/libcore.rlib src/*.rs build/liballoc.rlib build/libcollections.rlib build/libx86.rlib build/libwalloc.rlib
 	$(RUSTC) $(RFLAGS) $< -o $@ 
+
+build/libwalloc.rlib: build/liblib.rlib
+	$(RUSTC) $(RLIBFLAGS) src/alloc/lib.rs -o $@ --extern rlibc=build/liblib.rlib --extern core=$(CORE)
 
 test: src/kernel.rs build/libcore.rlib src/*.rs
 	$(RUSTC) --cfg feature=\"test\" $(RFLAGS) $< -o build/kernel.o
 
-build/%.o: src/%.asm
+build/%.o: src/arch/x86-64/%.asm
 	$(NASM) $< -o $@
 
 build/%.o: src/%.S
@@ -70,6 +73,9 @@ build/libx86.rlib: $(CORE) build/libraw_cpuid.rlib
 
 build/libraw_cpuid.rlib: $(CORE)
 	$(RUSTC) $(RLIBFLAGS) lib/rust-cpuid/src/lib.rs -o $@ --extern core=$(CORE)
+
+build/libslabmalloc.rlib: $(CORE)
+	$(RUSTC) $(RLIBFLAGS) lib/rust-slabmalloc/src/lib.rs -o $@ --extern core=$(CORE)
 
 build/librustc_unicode.rlib: $(CORE) lib/librustc_unicode
 	$(RUSTC) $(RLIBFLAGS) lib/librustc_unicode/lib.rs -o $@ --extern core=$(CORE)

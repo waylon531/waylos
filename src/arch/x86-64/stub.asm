@@ -42,7 +42,8 @@ hydrogen_header:
         dd HYDROGEN_HEADER_MAGIC
         dd 0 ;Flags
 
-        dq stack_begin;0xFFFFF00000003000;stack_begin ;Stack address
+        dq stack_begin;0xFFFFF00000003000;Stack address
+                      ;I probably should use something else
         dq 0,0,0
         dq 0,0
         dq isr_table;ISR entry table
