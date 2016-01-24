@@ -51,7 +51,7 @@ use screen::Screen;
 use screen::SCREEN;
 use memory::PageStack;
 use memory::PageTable;
-
+use collections::vec::Vec;
 #[no_mangle]
 #[lang="start"]
 pub extern fn kmain() {
@@ -98,6 +98,10 @@ pub extern fn kmain() {
     write!(SCREEN,"42: {} @ {}\n",*(0xFFFFF00000000000 as *mut u64),0xFFFFF00000000000);
     *(0xFFFFF10000000000 as *mut u64) = 0x42;
     write!(SCREEN,"66: {} @ {}\n",*(0xFFFFF10000000000 as *mut u64),0xFFFFF10000000000);
+    let mut x = Vec::new();
+    x.push(3);
+    x.push(2);
+    write!(SCREEN,"HEAPTEST 2={}\n",x.pop().unwrap());
     write!(SCREEN,"Successful bootup\n");
     }
 }
