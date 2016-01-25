@@ -42,7 +42,7 @@ hydrogen_header:
         dd HYDROGEN_HEADER_MAGIC
         dd 0 ;Flags
 
-        dq stack_begin;0xFFFFF00000003000;Stack address
+        dq 0;stack_begin;0xFFFFF00000003000;Stack address
                       ;I probably should use something else
         dq 0,0,0
         dq 0,0
@@ -182,7 +182,7 @@ add_page:
     call clear_registers
     mov rax, 0x10A000
     mov cr3, rax ;Enable identity paging
-    mov rsp,stack_begin ;This page is gauranteed to be allocated
+    mov rsp,stack_end ;This page is gauranteed to be allocated
     call missing_page
     ;mov rsp,[0xFFFFFFFFFFFFFF38]
 
