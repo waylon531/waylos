@@ -1,7 +1,23 @@
-To build waylos you need the nightly version of rust. You'll probably also have to copy the libcore from that version to lib/libcore. Uses Hydrogen as a loader.
+#Waylos
+Waylos is going to be a 64-bit microkernel written in Rust.
 
-```make run``` to run
+To build waylos you need the nightly version of rust. Waylos uses Hydrogen as a loader.
+
+To build from source:
+```
+git submodule update --init
+make run
+```
 
 ````make test; make run```` to run with runtime tests
 
-It doesn't do much right now, it starts up 2 threads that have a counter and output stuff to the serial port. It also handles page faults.
+Current features:
+* A watermark memory allocator
+* x86-64 only
+* Printing to the screen
+* Paging
+* Pages are allocated on page fault
+
+Planned features:
+* Multithreading (WIP)
+* Message passing
