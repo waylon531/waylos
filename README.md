@@ -1,4 +1,5 @@
 #Waylos
+## IMPORTANT: This repository is now being worked on at https://gitlab.com/waylon531/waylos
 Waylos is going to be a 64-bit microkernel written in Rust.
 
 To build waylos you need the nightly version of rust. Waylos uses Hydrogen as a loader.
